@@ -125,6 +125,12 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_CREDENTIALS = False
-CORS_ALLOWED_ORIGINS = ['.onrender.com', 'localhost']
-CSRF_TRUSTED_ORIGINS = ['.onrender.com', 'localhost']
-CORS_ALLOW_ALL_ORIGINS = True
+CSRF_TRUSTED_ORIGINS = [
+    "https://onechange-uv0r.onrender.com",
+    "http://localhost:8000",
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "https://onechange-uv0r.onrender.com",
+    "http://localhost:8000",
+]
