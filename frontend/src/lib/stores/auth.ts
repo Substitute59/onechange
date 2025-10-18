@@ -32,7 +32,7 @@ function createAuthStore() {
     /* --------- Get CSRF cookie --------- */
     async setCsrfToken() {
       try {
-        await fetch(`${PUBLIC_BACK_URL}api/set-csrf-token/`, {
+        await fetch(`${PUBLIC_BACK_URL}api/set-csrf-token`, {
           method: 'GET',
           credentials: 'include'
         });
@@ -49,7 +49,7 @@ function createAuthStore() {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (csrfToken) headers['X-CSRFToken'] = csrfToken;
 
-      const response = await fetch(`${PUBLIC_BACK_URL}api/login/`, {
+      const response = await fetch(`${PUBLIC_BACK_URL}api/login`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ email, password }),
@@ -105,7 +105,7 @@ function createAuthStore() {
       const headers: Record<string, string> = {};
       if (csrfToken) headers['X-CSRFToken'] = csrfToken;
 
-      const response = await fetch(`${PUBLIC_BACK_URL}api/logout/`, {
+      const response = await fetch(`${PUBLIC_BACK_URL}api/logout`, {
         method: 'POST',
         headers,
         credentials: 'include'
@@ -121,7 +121,7 @@ function createAuthStore() {
     /* --------- Fetch Current User --------- */
     async fetchUser() {
       try {
-        const response = await fetch(`${PUBLIC_BACK_URL}api/user/`, {
+        const response = await fetch(`${PUBLIC_BACK_URL}api/user`, {
           method: 'GET',
           credentials: 'include'
         });
