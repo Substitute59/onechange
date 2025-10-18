@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getCSRFToken } from '../../lib/stores/auth';
 	import { goto } from '$app/navigation';
+	import { PUBLIC_BACK_URL } from '$env/static/public';
 
 	let email = '';
 	let password = '';
@@ -12,7 +13,7 @@
 		success = '';
 
 		try {
-			const response = await fetch(process.env.BACK_URL + 'api/register', {
+			const response = await fetch(`${PUBLIC_BACK_URL}api/register`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

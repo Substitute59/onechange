@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { PUBLIC_BACK_URL } from '$env/static/public';
 
 /* ========= Interfaces ========= */
 export interface User {
@@ -29,14 +30,14 @@ function createAuthStore() {
     subscribe,
 
     async setCsrfToken() {
-      await fetch(process.env.BACK_URL + 'api/set-csrf-token', {
+      await fetch(PUBLIC_BACK_URL + 'api/set-csrf-token', {
         method: 'GET',
         credentials: 'include'
       });
     },
 
     async login(email: string, password: string) {
-      const response = await fetch(process.env.BACK_URL + 'api/login', {
+      const response = await fetch(PUBLIC_BACK_URL + 'api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,7 +62,7 @@ function createAuthStore() {
     },
 
     async logout() {
-      const response = await fetch(process.env.BACK_URL + 'api/logout', {
+      const response = await fetch(PUBLIC_BACK_URL + 'api/logout', {
         method: 'POST',
         headers: {
           'X-CSRFToken': getCSRFToken()
@@ -78,7 +79,7 @@ function createAuthStore() {
 
     async fetchUser() {
       try {
-        const response = await fetch(process.env.BACK_URL + 'api/user', {
+        const response = await fetch(PUBLIC_BACK_URL + 'api/user', {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
