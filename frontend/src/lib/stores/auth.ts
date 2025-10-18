@@ -29,7 +29,7 @@ function createAuthStore() {
   return {
     subscribe,
 
-    /* --------- Get CSRF cookie --------- */
+    /* --------- Set CSRF cookie --------- */
     async setCsrfToken() {
       try {
         await fetch(`${PUBLIC_BACK_URL}api/set-csrf-token`, {
@@ -41,10 +41,28 @@ function createAuthStore() {
       }
     },
 
+    /* --------- Get CSRF cookie --------- */
+    getCSRFToken(): string | null {
+      const name = 'csrftoken';
+      let cookieValue: string | null = null;
+
+      if (typeof document !== 'undefined' && document.cookie) {
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+          const trimmed = cookie.trim();
+          if (trimmed.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    },
+
     /* --------- Login --------- */
     async login(email: string, password: string) {
       await this.setCsrfToken();
-      const csrfToken = getCSRFToken();
+      const csrfToken = this.getCSRFToken();
 
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (csrfToken) headers['X-CSRFToken'] = csrfToken;
@@ -74,7 +92,7 @@ function createAuthStore() {
     async register(email: string, password: string): Promise<{ success: boolean; message: string }> {
       try {
         await this.setCsrfToken();
-        const csrfToken = getCSRFToken();
+        const csrfToken = this.getCSRFToken();
 
         const response = await fetch(PUBLIC_BACK_URL + 'api/register', {
           method: 'POST',
@@ -101,7 +119,7 @@ function createAuthStore() {
     /* --------- Logout --------- */
     async logout() {
       await this.setCsrfToken();
-      const csrfToken = getCSRFToken();
+      const csrfToken = this.getCSRFToken();
       const headers: Record<string, string> = {};
       if (csrfToken) headers['X-CSRFToken'] = csrfToken;
 
@@ -160,24 +178,6 @@ function saveState(state: AuthState) {
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('authState', JSON.stringify(state));
   }
-}
-
-/* ========= CSRF Helper ========= */
-export function getCSRFToken(): string | null {
-  const name = 'csrftoken';
-  let cookieValue: string | null = null;
-
-  if (typeof document !== 'undefined' && document.cookie) {
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const trimmed = cookie.trim();
-      if (trimmed.startsWith(name + '=')) {
-        cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
 }
 
 export const auth = createAuthStore();
