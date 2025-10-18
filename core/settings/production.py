@@ -1,7 +1,7 @@
 from .base import *
 import os
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['onechange-uv0r.onrender.com']
 
@@ -15,16 +15,12 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "https://onechange-uv0r.onrender.com",
-    "http://localhost:8000",
-    "https://onechange.vercel.app",
-    "http://localhost:5173"
+    "https://onechange.vercel.app"
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "https://onechange-uv0r.onrender.com",
-    "http://localhost:8000",
-    "https://onechange.vercel.app",
-    "http://localhost:5173"
+    "https://onechange.vercel.app"
 ]
 
 CSRF_COOKIE_SECURE = True
