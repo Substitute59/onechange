@@ -1,7 +1,6 @@
 import { writable } from 'svelte/store';
 import { PUBLIC_BACK_URL } from '$env/static/public';
 
-/* ========= Interfaces ========= */
 export interface User {
   id?: number;
   email?: string;
@@ -13,7 +12,6 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-/* ========= Load State from localStorage ========= */
 const storedState = typeof localStorage !== 'undefined'
   ? localStorage.getItem('authState')
   : null;
@@ -22,59 +20,35 @@ const initialState: AuthState = storedState
   ? JSON.parse(storedState)
   : { user: null, isAuthenticated: false };
 
-/* ========= Create Store ========= */
 function createAuthStore() {
   const { subscribe, update, set } = writable<AuthState>(initialState);
+  let csrfToken: string | null = null;
+
+  async function fetchCsrfToken() {
+    const res = await fetch(`${PUBLIC_BACK_URL}api/set_csrf_token`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    csrfToken = data.csrfToken;
+  }
 
   return {
     subscribe,
 
-    /* --------- Set CSRF cookie --------- */
-    async setCsrfToken() {
-      try {
-        await fetch(`${PUBLIC_BACK_URL}api/set-csrf-token`, {
-          method: 'GET',
-          credentials: 'include'
-        });
-      } catch (err) {
-        console.error('Failed to set CSRF token', err);
-      }
-    },
-
-    /* --------- Get CSRF cookie --------- */
-    getCSRFToken(): string | null {
-      const name = 'csrftoken';
-      let cookieValue: string | null = null;
-
-      if (typeof document !== 'undefined' && document.cookie) {
-        const cookies = document.cookie.split(';');
-        for (const cookie of cookies) {
-          const trimmed = cookie.trim();
-          if (trimmed.startsWith(name + '=')) {
-            cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
-            break;
-          }
-        }
-      }
-      return cookieValue;
-    },
-
-    /* --------- Login --------- */
     async login(email: string, password: string) {
-      await this.setCsrfToken();
-      const csrfToken = this.getCSRFToken();
-
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (csrfToken) headers['X-CSRFToken'] = csrfToken;
-
-      const response = await fetch(`${PUBLIC_BACK_URL}api/login`, {
+      if (!csrfToken) await fetchCsrfToken();
+      const res = await fetch(`${PUBLIC_BACK_URL}api/login`, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+        },
         body: JSON.stringify({ email, password }),
-        credentials: 'include'
+        credentials: 'include',
       });
 
-      const data = await response.json();
+      const data = await res.json();
       update(state => {
         if (data.success) {
           state.isAuthenticated = true;
@@ -88,80 +62,50 @@ function createAuthStore() {
       });
     },
 
-    /* --------- Register --------- */
-    async register(email: string, password: string): Promise<{ success: boolean; message: string }> {
-      try {
-        await this.setCsrfToken();
-        const csrfToken = this.getCSRFToken();
-
-        const response = await fetch(PUBLIC_BACK_URL + 'api/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken || ''
-          },
-          body: JSON.stringify({ email, password }),
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          return { success: true, message: 'Registration successful! Please login.' };
-        } else {
-          return { success: false, message: data.error || 'Registration failed' };
-        }
-      } catch (error) {
-        return { success: false, message: 'An error occurred during registration. ' + error };
-      }
-    },
-
-    /* --------- Logout --------- */
-    async logout() {
-      await this.setCsrfToken();
-      const csrfToken = this.getCSRFToken();
-      const headers: Record<string, string> = {};
-      if (csrfToken) headers['X-CSRFToken'] = csrfToken;
-
-      const response = await fetch(`${PUBLIC_BACK_URL}api/logout`, {
+    async register(email: string, password: string) {
+      if (!csrfToken) await fetchCsrfToken();
+      const res = await fetch(`${PUBLIC_BACK_URL}api/register`, {
         method: 'POST',
-        headers,
-        credentials: 'include'
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include',
       });
 
-      if (response.ok) {
-        const resetState = { user: null, isAuthenticated: false };
-        set(resetState);
-        saveState(resetState);
-      }
+      const data = await res.json();
+      if (res.ok) return { success: true, message: 'Registration successful!' };
+      return { success: false, message: data.error || 'Registration failed' };
     },
 
-    /* --------- Fetch Current User --------- */
-    async fetchUser() {
-      try {
-        const response = await fetch(`${PUBLIC_BACK_URL}api/user`, {
-          method: 'GET',
-          credentials: 'include'
-        });
+    async logout() {
+      if (!csrfToken) await fetchCsrfToken();
+      await fetch(`${PUBLIC_BACK_URL}api/logout`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken || '' },
+        credentials: 'include',
+      });
 
-        if (response.ok) {
-          const data: User = await response.json();
-          update(state => {
-            state.user = data;
-            state.isAuthenticated = true;
-            saveState(state);
-            return state;
-          });
-        } else {
-          update(state => {
-            state.user = null;
-            state.isAuthenticated = false;
-            saveState(state);
-            return state;
-          });
-        }
-      } catch (err) {
-        console.error('Failed to fetch user', err);
+      const resetState = { user: null, isAuthenticated: false };
+      set(resetState);
+      saveState(resetState);
+    },
+
+    async fetchUser() {
+      const res = await fetch(`${PUBLIC_BACK_URL}api/user`, {
+        credentials: 'include',
+      });
+
+      if (res.ok) {
+        const data: User = await res.json();
+        update(state => {
+          state.user = data;
+          state.isAuthenticated = true;
+          saveState(state);
+          return state;
+        });
+      } else {
         update(state => {
           state.user = null;
           state.isAuthenticated = false;
@@ -169,11 +113,10 @@ function createAuthStore() {
           return state;
         });
       }
-    }
+    },
   };
 }
 
-/* ========= LocalStorage Persistence ========= */
 function saveState(state: AuthState) {
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('authState', JSON.stringify(state));

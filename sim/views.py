@@ -14,7 +14,8 @@ def set_csrf_token(request):
     """
     We set the CSRF cookie on the frontend.
     """
-    return JsonResponse({'message': 'CSRF cookie set'})
+    token = request.META.get("CSRF_COOKIE")  # token côté serveur
+    return JsonResponse({"csrfToken": token})
  
 @require_http_methods(['POST'])
 def login_view(request):
