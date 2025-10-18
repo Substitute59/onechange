@@ -22,11 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-!(*h(+ox%_+=7bi^jvp2w)3w)zh(8e$cqj$1c#0%kso7$oocts'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
-
 
 # Application definition
 
@@ -113,28 +108,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = 'static/'
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-CORS_ALLOW_CREDENTIALS = False
-CSRF_TRUSTED_ORIGINS = [
-    "https://onechange-uv0r.onrender.com",
-    "http://localhost:8000",
-    "https://onechange.vercel.app",
-    "http://localhost:5173"
-]
-
-CORS_ALLOWED_ORIGINS = [
-    "https://onechange-uv0r.onrender.com",
-    "http://localhost:8000",
-    "https://onechange.vercel.app",
-    "http://localhost:5173"
-]
