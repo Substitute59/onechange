@@ -20,7 +20,7 @@
 			const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 			if (csrfToken) headers['X-CSRFToken'] = csrfToken;
 
-			const response = await fetch(`${PUBLIC_BACK_URL}/api/register`, {
+			const response = await fetch(`${PUBLIC_BACK_URL}api/register`, {
 				method: 'POST',
 				headers,
 				body: JSON.stringify({ email, password }),
