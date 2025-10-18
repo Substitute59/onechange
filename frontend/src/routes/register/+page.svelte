@@ -1,44 +1,22 @@
 <script lang="ts">
-	import { auth, getCSRFToken } from '../../lib/stores/auth';
-	import { goto } from '$app/navigation';
-	import { PUBLIC_BACK_URL } from '$env/static/public';
+  import { auth } from '../../lib/stores/auth';
+  import { goto } from '$app/navigation';
 
-	let email = '';
-	let password = '';
-	let error = '';
-	let success = '';
+  let email = '';
+  let password = '';
+  let error = '';
+  let success = '';
 
-	async function register() {
-		error = '';
-		success = '';
+  async function register() {
+    const result = await auth.register(email, password);
 
-		try {
-			// Récupérer le CSRF cookie via le store auth
-			await auth.setCsrfToken();
-			const csrfToken = getCSRFToken();
-
-			const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-			if (csrfToken) headers['X-CSRFToken'] = csrfToken;
-
-			const response = await fetch(`${PUBLIC_BACK_URL}api/register`, {
-				method: 'POST',
-				headers,
-				body: JSON.stringify({ email, password }),
-				credentials: 'include'
-			});
-
-			const data = await response.json();
-
-			if (response.ok && data.success) {
-				success = 'Registration successful! Please log in.';
-				setTimeout(() => goto('/login'), 1000);
-			} else {
-				error = data.error || 'Registration failed';
-			}
-		} catch (err) {
-			error = 'An error occurred during registration: ' + err;
-		}
-	}
+    if (result.success) {
+      success = result.message;
+      setTimeout(() => goto('/login'), 1000);
+    } else {
+      error = result.message;
+    }
+  }
 </script>
 
 <div>

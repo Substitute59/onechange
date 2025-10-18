@@ -70,6 +70,34 @@ function createAuthStore() {
       });
     },
 
+    /* --------- Register --------- */
+    async register(email: string, password: string): Promise<{ success: boolean; message: string }> {
+      try {
+        await this.setCsrfToken();
+        const csrfToken = getCSRFToken();
+
+        const response = await fetch(PUBLIC_BACK_URL + 'api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken || ''
+          },
+          body: JSON.stringify({ email, password }),
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          return { success: true, message: 'Registration successful! Please login.' };
+        } else {
+          return { success: false, message: data.error || 'Registration failed' };
+        }
+      } catch (error) {
+        return { success: false, message: 'An error occurred during registration. ' + error };
+      }
+    },
+
     /* --------- Logout --------- */
     async logout() {
       await this.setCsrfToken();
