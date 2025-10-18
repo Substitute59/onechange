@@ -12,7 +12,7 @@ MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-CORS_ALLOW_CREDENTIALS = False
+CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "https://onechange-uv0r.onrender.com",
     "http://localhost:8000",
@@ -26,3 +26,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://onechange.vercel.app",
     "http://localhost:5173"
 ]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = None
+SESSION_COOKIE_SAMESITE = None

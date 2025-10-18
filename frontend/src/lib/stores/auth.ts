@@ -22,51 +22,64 @@ const initialState: AuthState = storedState
   ? JSON.parse(storedState)
   : { user: null, isAuthenticated: false };
 
-/* ========= Crée le store ========= */
+/* ========= Create Store ========= */
 function createAuthStore() {
   const { subscribe, update, set } = writable<AuthState>(initialState);
 
   return {
     subscribe,
 
+    /* --------- Get CSRF cookie --------- */
     async setCsrfToken() {
-      await fetch(PUBLIC_BACK_URL + 'api/set-csrf-token', {
-        method: 'GET',
-        credentials: 'include'
-      });
+      try {
+        await fetch(`${PUBLIC_BACK_URL}api/set-csrf-token`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+      } catch (err) {
+        console.error('Failed to set CSRF token', err);
+      }
     },
 
+    /* --------- Login --------- */
     async login(email: string, password: string) {
-      const response = await fetch(PUBLIC_BACK_URL + 'api/login', {
+      await this.setCsrfToken();
+      const csrfToken = getCSRFToken();
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
+      const response = await fetch(`${PUBLIC_BACK_URL}api/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCSRFToken()
-        },
+        headers,
         body: JSON.stringify({ email, password }),
         credentials: 'include'
       });
 
       const data = await response.json();
-      update((state) => {
+      update(state => {
         if (data.success) {
           state.isAuthenticated = true;
           state.user = data.user || null;
         } else {
-          state.user = null;
           state.isAuthenticated = false;
+          state.user = null;
         }
         saveState(state);
         return state;
       });
     },
 
+    /* --------- Logout --------- */
     async logout() {
-      const response = await fetch(PUBLIC_BACK_URL + 'api/logout', {
+      await this.setCsrfToken();
+      const csrfToken = getCSRFToken();
+      const headers: Record<string, string> = {};
+      if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
+      const response = await fetch(`${PUBLIC_BACK_URL}api/logout`, {
         method: 'POST',
-        headers: {
-          'X-CSRFToken': getCSRFToken()
-        },
+        headers,
         credentials: 'include'
       });
 
@@ -77,35 +90,33 @@ function createAuthStore() {
       }
     },
 
+    /* --------- Fetch Current User --------- */
     async fetchUser() {
       try {
-        const response = await fetch(PUBLIC_BACK_URL + 'api/user', {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
-          }
+        const response = await fetch(`${PUBLIC_BACK_URL}api/user`, {
+          method: 'GET',
+          credentials: 'include'
         });
 
         if (response.ok) {
           const data: User = await response.json();
-          update((state) => {
+          update(state => {
             state.user = data;
             state.isAuthenticated = true;
             saveState(state);
             return state;
           });
         } else {
-          update((state) => {
+          update(state => {
             state.user = null;
             state.isAuthenticated = false;
             saveState(state);
             return state;
           });
         }
-      } catch (error) {
-        console.error('Failed to fetch user', error);
-        update((state) => {
+      } catch (err) {
+        console.error('Failed to fetch user', err);
+        update(state => {
           state.user = null;
           state.isAuthenticated = false;
           saveState(state);
@@ -116,29 +127,28 @@ function createAuthStore() {
   };
 }
 
-/* ========= Persistance LocalStorage ========= */
+/* ========= LocalStorage Persistence ========= */
 function saveState(state: AuthState) {
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('authState', JSON.stringify(state));
   }
 }
 
-/* ========= CSRF ========= */
-export function getCSRFToken(): string {
+/* ========= CSRF Helper ========= */
+export function getCSRFToken(): string | null {
   const name = 'csrftoken';
   let cookieValue: string | null = null;
 
   if (typeof document !== 'undefined' && document.cookie) {
     const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+    for (const cookie of cookies) {
+      const trimmed = cookie.trim();
+      if (trimmed.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
         break;
       }
     }
   }
-  if (!cookieValue) throw new Error('Missing CSRF cookie.');
   return cookieValue;
 }
 
