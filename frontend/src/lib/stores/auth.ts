@@ -25,7 +25,7 @@ function createAuthStore() {
   let csrfToken: string | null = null;
 
   async function fetchCsrfToken() {
-    const res = await fetch(`${PUBLIC_BACK_URL}api/set_csrf_token`, {
+    const res = await fetch(`${PUBLIC_BACK_URL}api/set-csrf-token`, {
       method: 'GET',
       credentials: 'include',
     });
