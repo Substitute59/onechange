@@ -2,13 +2,13 @@
 	import { auth } from '../../lib/stores/auth';
 	import { goto } from '$app/navigation';
 
-	let email = '';
+	let username = '';
 	let password = '';
 	let error = '';
 
 	async function login() {
 		try {
-			await auth.login(email, password);
+			await auth.login(username, password);
 			if ($auth.isAuthenticated) {
 				goto('/');
 			} else {
@@ -29,10 +29,10 @@
 
 	<form on:submit|preventDefault={login}>
 		<div>
-			<label for="email">Email:</label>
+			<label for="username">Username:</label>
 			<input
-				bind:value={email}
-				id="email"
+				bind:value={username}
+				id="username"
 				type="text"
 				required
 				on:input={resetError}

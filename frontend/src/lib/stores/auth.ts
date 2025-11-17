@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import { PUBLIC_BACK_URL } from '$env/static/public';
+import { csrfStore } from './csrf';
 
 export interface User {
   id?: number;
@@ -22,29 +23,19 @@ const initialState: AuthState = storedState
 
 function createAuthStore() {
   const { subscribe, update, set } = writable<AuthState>(initialState);
-  let csrfToken: string | null = null;
-
-  async function fetchCsrfToken() {
-    const res = await fetch(`${PUBLIC_BACK_URL}api/set-csrf-token`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    const data = await res.json();
-    csrfToken = data.csrfToken;
-  }
 
   return {
     subscribe,
 
-    async login(email: string, password: string) {
-      if (!csrfToken) await fetchCsrfToken();
+    async login(username: string, password: string) {
+      const csrfToken = await csrfStore.get();
       const res = await fetch(`${PUBLIC_BACK_URL}api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
         credentials: 'include',
       });
 
@@ -62,15 +53,15 @@ function createAuthStore() {
       });
     },
 
-    async register(email: string, password: string) {
-      if (!csrfToken) await fetchCsrfToken();
+    async register(username: string, email: string, password: string) {
+      const csrfToken = await csrfStore.get();
       const res = await fetch(`${PUBLIC_BACK_URL}api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken || '',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, email, password }),
         credentials: 'include',
       });
 
@@ -80,7 +71,7 @@ function createAuthStore() {
     },
 
     async logout() {
-      if (!csrfToken) await fetchCsrfToken();
+      const csrfToken = await csrfStore.get();
       await fetch(`${PUBLIC_BACK_URL}api/logout`, {
         method: 'POST',
         headers: { 'X-CSRFToken': csrfToken || '' },

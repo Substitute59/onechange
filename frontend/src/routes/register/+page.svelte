@@ -2,13 +2,14 @@
   import { auth } from '../../lib/stores/auth';
   import { goto } from '$app/navigation';
 
+  let username = '';
   let email = '';
   let password = '';
   let error = '';
   let success = '';
 
   async function register() {
-    const result = await auth.register(email, password);
+    const result = await auth.register(username, email, password);
 
     if (result.success) {
       success = result.message;
@@ -22,6 +23,16 @@
 <div>
 	<h2>Register</h2>
 	<form on:submit|preventDefault={register}>
+		<div>
+			<label for="username">Username:</label>
+			<input
+				bind:value={username}
+				id="username"
+				type="username"
+				required
+			/>
+		</div>
+
 		<div>
 			<label for="email">Email:</label>
 			<input
