@@ -6,17 +6,16 @@
 
   let user: User | null = null;
   let isAuthenticated = false;
+  let loading = true;
 
-  // abonnement au store
   const unsubscribe = auth.subscribe(state => {
     user = state.user;
     isAuthenticated = state.isAuthenticated;
+    loading = state.loading;
   });
 
   onMount(async () => {
-    // récupérer l'utilisateur au chargement
     await auth.fetchUser();
-    // écouter les changements de session (connexion / déconnexion)
     auth.subscribeToAuthChanges();
   });
 
@@ -28,19 +27,22 @@
   }
 </script>
 
-<header>
-  <nav>
-    {#if isAuthenticated}
-      <span>Hi, {user?.username}!</span>
-      <a href="/profile">Mon profil</a>
-      <button on:click={logout}>Logout</button>
-    {:else}
-      <a href="/login">Login</a>
-      <a href="/register">Register</a>
-    {/if}
-  </nav>
-</header>
+{#if loading}
+  <span>Loading...</span>
+{:else}
+  <header>
+    <nav>
+      {#if isAuthenticated}
+        <span>Hi, {user?.username || user?.email}!</span>
+        <a href="/users/{user?.id}">Mon profil</a>
+        <button on:click={logout}>Logout</button>
+      {:else}
+        <a href="/login">Login</a>
+      {/if}
+    </nav>
+  </header>
 
-<main>
-  <slot /> <!-- le contenu de chaque page s'affiche ici -->
-</main>
+  <main>
+    <slot />
+  </main>
+{/if}

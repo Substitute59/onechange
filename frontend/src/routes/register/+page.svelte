@@ -50,6 +50,7 @@
 </script>
 
 <h1>Register</h1>
+<span>Already have an account?</span> <a href="/login">Log in</a>.
 
 <form on:submit|preventDefault={register}>
   <input type="text" placeholder="Username" bind:value={username} required />

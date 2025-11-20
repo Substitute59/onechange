@@ -14,18 +14,23 @@ export interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const storedState: AuthState = typeof localStorage !== 'undefined' && localStorage.getItem('authState')
   ? JSON.parse(localStorage.getItem('authState')!)
-  : { user: null, isAuthenticated: false };
+  : { user: null, isAuthenticated: false, loading: true };
 
 const CHECK_EMAIL_URL = PUBLIC_BACK_URL + 'api/users/check-email/';
 
 async function checkEmail(email: string) {
-  const res = await fetch(`${CHECK_EMAIL_URL}?email=${email}`);
-  const data = await res.json();
-  return data;
+  try {
+    const res = await fetch(`${CHECK_EMAIL_URL}?email=${email}`);
+    if (!res.ok) return { exists: false };
+    return await res.json();
+  } catch {
+    return { exists: false };
+  }
 }
 
 function createAuthStore() {
@@ -54,7 +59,7 @@ function createAuthStore() {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (data?.user) {
         update(() => {
-          const state = { user: data.user as User, isAuthenticated: true };
+          const state = { user: data.user as User, isAuthenticated: true, loading: false };
           saveState(state);
           return state;
         });
@@ -72,7 +77,7 @@ function createAuthStore() {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (data?.user) {
         update(() => {
-          const state = { user: data.user as User, isAuthenticated: true };
+          const state = { user: data.user as User, isAuthenticated: true, loading: false };
           saveState(state);
           return state;
         });
@@ -81,7 +86,6 @@ function createAuthStore() {
     },
 
     async signInWithGoogle() {
-      // Lance Google OAuth
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -94,36 +98,66 @@ function createAuthStore() {
 
     async signOut() {
       const { error } = await supabase.auth.signOut();
-      set({ user: null, isAuthenticated: false });
-      saveState({ user: null, isAuthenticated: false });
+      const state = { user: null, isAuthenticated: false, loading: false };
+      set(state);
+      saveState(state);
       return { error };
     },
 
     async fetchUser() {
+      update((state) => ({ ...state, loading: true }));
       const { data } = await supabase.auth.getUser();
       if (data?.user) {
         update(() => {
-          const state = { user: data.user as User, isAuthenticated: true };
+          const state = { user: data.user as User, isAuthenticated: true, loading: false };
           saveState(state);
           return state;
         });
       } else {
-        set({ user: null, isAuthenticated: false });
-        saveState({ user: null, isAuthenticated: false });
+        const state = { user: null, isAuthenticated: false, loading: false };
+        set(state);
+        saveState(state);
+      }
+    },
+
+    async forgotPassword(email: string) {
+      try {
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/reset-password'
+        });
+        return { data, error };
+      } catch (err: unknown) {
+        return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+      }
+    },
+
+    async resetPassword(newPassword: string) {
+      try {
+        const { data, error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+        return { data, error };
+      } catch (err: unknown) {
+        return { error: err instanceof Error ? err : new Error(String(err)) };
       }
     },
 
     subscribeToAuthChanges() {
       supabase.auth.onAuthStateChange((_event, session) => {
+        update((state) => ({ ...state, loading: true }));
+
         if (session?.user) {
+          const newState = { user: session.user as User, isAuthenticated: true, loading: false };
           update(() => {
-            const state = { user: session.user as User, isAuthenticated: true };
-            saveState(state);
-            return state;
+            saveState(newState);
+            return newState;
           });
         } else {
-          set({ user: null, isAuthenticated: false });
-          saveState({ user: null, isAuthenticated: false });
+          const newState = { user: null, isAuthenticated: false, loading: false };
+          update(() => {
+            saveState(newState);
+            return newState;
+          });
         }
       });
     }

@@ -19,12 +19,14 @@
 </script>
 
 <h1>Login</h1>
+<span>Don't have any account?</span> <a href="/register">Register</a>.
 
 <form on:submit|preventDefault={login}>
   <input type="email" bind:value={email} placeholder="Email" required />
   <input type="password" bind:value={password} placeholder="Password" required />
   <button type="submit">Login</button>
 </form>
+<a href="/forgot-password">Forgot password?</a>
 
 <button on:click={loginWithGoogle}>Login with Google</button>
 
