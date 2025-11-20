@@ -20,7 +20,7 @@ const storedState: AuthState = typeof localStorage !== 'undefined' && localStora
   ? JSON.parse(localStorage.getItem('authState')!)
   : { user: null, isAuthenticated: false };
 
-const CHECK_EMAIL_URL = PUBLIC_BACK_URL + '/api/users/check-email/';
+const CHECK_EMAIL_URL = PUBLIC_BACK_URL + 'api/users/check-email/';
 
 async function checkEmail(email: string) {
   const res = await fetch(`${CHECK_EMAIL_URL}?email=${email}`);
