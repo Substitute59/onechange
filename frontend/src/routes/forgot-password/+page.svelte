@@ -1,30 +1,30 @@
 <script lang="ts">
-  import { auth } from '$lib/stores/auth';
+	import { auth } from '$lib/stores/auth';
 
-  let email = '';
-  let message = '';
-  let error = '';
+	let email = '';
+	let message = '';
+	let error = '';
 
-  async function submit() {
-    message = '';
-    error = '';
+	async function submit() {
+		message = '';
+		error = '';
 
-    const { error: err } = await auth.forgotPassword(email);
+		const { error: err } = await auth.forgotPassword(email);
 
-    if (err) {
-      error = err.message;
-    } else {
-      message = 'Si ce mail existe, un lien de réinitialisation a été envoyé.';
-      email = '';
-    }
-  }
+		if (err) {
+			error = err.message;
+		} else {
+			message = 'Si ce mail existe, un lien de réinitialisation a été envoyé.';
+			email = '';
+		}
+	}
 </script>
 
 <h1>Mot de passe oublié</h1>
 
 <form on:submit|preventDefault={submit}>
-  <input type="email" bind:value={email} placeholder="Votre email" required />
-  <button type="submit">Envoyer le lien</button>
+	<input type="email" bind:value={email} placeholder="Votre email" required />
+	<button type="submit">Envoyer le lien</button>
 </form>
 
 {#if message}<p style="color: green">{message}</p>{/if}

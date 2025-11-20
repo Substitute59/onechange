@@ -10,23 +10,34 @@ import svelteConfig from './svelte.config.js';
 
 const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
-export default defineConfig(
+export default defineConfig([
+	// Ignorer les fichiers de .gitignore
 	includeIgnoreFile(gitignorePath),
+
+	// Config JS de base
 	js.configs.recommended,
+
+	// Config TypeScript
 	...ts.configs.recommended,
+
+	// Config Svelte
 	...svelte.configs.recommended,
+
+	// Config Prettier
 	prettier,
 	...svelte.configs.prettier,
+
+	// Règles globales
 	{
 		languageOptions: {
 			globals: { ...globals.browser, ...globals.node }
 		},
 		rules: {
-			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
-			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
 			'no-undef': 'off'
 		}
 	},
+
+	// Config spécifique aux fichiers .svelte
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
 		languageOptions: {
@@ -38,4 +49,4 @@ export default defineConfig(
 			}
 		}
 	}
-);
+]);
