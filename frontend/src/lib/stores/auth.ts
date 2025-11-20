@@ -1,11 +1,14 @@
 import { writable } from 'svelte/store';
+import { supabase } from '$lib/supabase';
 import { PUBLIC_BACK_URL } from '$env/static/public';
-import { csrfStore } from './csrf';
 
 export interface User {
-  id?: number;
-  email?: string;
+  id: string;
+  email: string;
   username?: string;
+  avatar_url?: string;
+  city?: string;
+  age?: number;
 }
 
 interface AuthState {
@@ -13,105 +16,118 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-const storedState = typeof localStorage !== 'undefined'
-  ? localStorage.getItem('authState')
-  : null;
-
-const initialState: AuthState = storedState
-  ? JSON.parse(storedState)
+const storedState: AuthState = typeof localStorage !== 'undefined' && localStorage.getItem('authState')
+  ? JSON.parse(localStorage.getItem('authState')!)
   : { user: null, isAuthenticated: false };
 
+const CHECK_EMAIL_URL = PUBLIC_BACK_URL + '/api/users/check-email/';
+
+async function checkEmail(email: string) {
+  const res = await fetch(`${CHECK_EMAIL_URL}?email=${email}`);
+  const data = await res.json();
+  return data;
+}
+
 function createAuthStore() {
-  const { subscribe, update, set } = writable<AuthState>(initialState);
+  const { subscribe, update, set } = writable<AuthState>(storedState);
+
+  function saveState(state: AuthState) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('authState', JSON.stringify(state));
+    }
+  }
 
   return {
     subscribe,
 
-    async login(username: string, password: string) {
-      const csrfToken = await csrfStore.get();
-      const res = await fetch(`${PUBLIC_BACK_URL}api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',
-        },
-        body: JSON.stringify({ username, password }),
-        credentials: 'include',
-      });
+    async signUp(email: string, password: string) {
+      const check = await checkEmail(email);
 
-      const data = await res.json();
-      update(state => {
-        if (data.success) {
-          state.isAuthenticated = true;
-          state.user = data.user || null;
+      if (check.exists) {
+        if (check.provider === 'email') {
+          return { data: null, error: new Error('Email déjà utilisé') };
         } else {
-          state.isAuthenticated = false;
-          state.user = null;
+          return { data: null, error: new Error(`Email déjà utilisé avec ${check.provider}, veuillez utiliser ce provider`) };
         }
-        saveState(state);
-        return state;
-      });
-    },
+      }
 
-    async register(username: string, email: string, password: string) {
-      const csrfToken = await csrfStore.get();
-      const res = await fetch(`${PUBLIC_BACK_URL}api/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',
-        },
-        body: JSON.stringify({ username, email, password }),
-        credentials: 'include',
-      });
-
-      const data = await res.json();
-      if (res.ok) return { success: true, message: 'Registration successful!' };
-      return { success: false, message: data.error || 'Registration failed' };
-    },
-
-    async logout() {
-      const csrfToken = await csrfStore.get();
-      await fetch(`${PUBLIC_BACK_URL}api/logout`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': csrfToken || '' },
-        credentials: 'include',
-      });
-
-      const resetState = { user: null, isAuthenticated: false };
-      set(resetState);
-      saveState(resetState);
-    },
-
-    async fetchUser() {
-      const res = await fetch(`${PUBLIC_BACK_URL}api/user`, {
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        const data: User = await res.json();
-        update(state => {
-          state.user = data;
-          state.isAuthenticated = true;
-          saveState(state);
-          return state;
-        });
-      } else {
-        update(state => {
-          state.user = null;
-          state.isAuthenticated = false;
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (data?.user) {
+        update(() => {
+          const state = { user: data.user as User, isAuthenticated: true };
           saveState(state);
           return state;
         });
       }
+      return { data, error };
     },
-  };
-}
 
-function saveState(state: AuthState) {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('authState', JSON.stringify(state));
-  }
+    async signIn(email: string, password: string) {
+      const check = await checkEmail(email);
+
+      if (check.exists && check.provider !== 'email') {
+        return { data: null, error: new Error(`Un compte existe avec ${check.provider}, veuillez utiliser ce provider`) };
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (data?.user) {
+        update(() => {
+          const state = { user: data.user as User, isAuthenticated: true };
+          saveState(state);
+          return state;
+        });
+      }
+      return { data, error };
+    },
+
+    async signInWithGoogle() {
+      // Lance Google OAuth
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+
+      return { data, error };
+    },
+
+    async signOut() {
+      const { error } = await supabase.auth.signOut();
+      set({ user: null, isAuthenticated: false });
+      saveState({ user: null, isAuthenticated: false });
+      return { error };
+    },
+
+    async fetchUser() {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        update(() => {
+          const state = { user: data.user as User, isAuthenticated: true };
+          saveState(state);
+          return state;
+        });
+      } else {
+        set({ user: null, isAuthenticated: false });
+        saveState({ user: null, isAuthenticated: false });
+      }
+    },
+
+    subscribeToAuthChanges() {
+      supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          update(() => {
+            const state = { user: session.user as User, isAuthenticated: true };
+            saveState(state);
+            return state;
+          });
+        } else {
+          set({ user: null, isAuthenticated: false });
+          saveState({ user: null, isAuthenticated: false });
+        }
+      });
+    }
+  };
 }
 
 export const auth = createAuthStore();

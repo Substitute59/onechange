@@ -1,59 +1,33 @@
 <script lang="ts">
-	import { auth } from '../../lib/stores/auth';
-	import { goto } from '$app/navigation';
+  import { auth } from '$lib/stores/auth';
+  import { goto } from '$app/navigation';
 
-	let username = '';
-	let password = '';
-	let error = '';
+  let email = '';
+  let password = '';
+  let error = '';
 
-	async function login() {
-		try {
-			await auth.login(username, password);
-			if ($auth.isAuthenticated) {
-				goto('/');
-			} else {
-				error = 'Login failed. Please check your credentials.';
-			}
-		} catch (err) {
-			error = 'Login failed. Please try again.';
-		}
-	}
+  async function login() {
+    const { error: loginError } = await auth.signIn(email, password);
+    if (loginError) error = loginError.message;
+    else goto('/');
+  }
 
-	function resetError() {
-		error = '';
-	}
+  async function loginWithGoogle() {
+    const { error: googleError } = await auth.signInWithGoogle();
+    if (googleError) error = googleError.message;
+  }
 </script>
 
-<div class="login">
-	<h1>Login</h1>
+<h1>Login</h1>
 
-	<form on:submit|preventDefault={login}>
-		<div>
-			<label for="username">Username:</label>
-			<input
-				bind:value={username}
-				id="username"
-				type="text"
-				required
-				on:input={resetError}
-			/>
-		</div>
+<form on:submit|preventDefault={login}>
+  <input type="email" bind:value={email} placeholder="Email" required />
+  <input type="password" bind:value={password} placeholder="Password" required />
+  <button type="submit">Login</button>
+</form>
 
-		<div>
-			<label for="password">Password:</label>
-			<input
-				bind:value={password}
-				id="password"
-				type="password"
-				required
-				on:input={resetError}
-			/>
-		</div>
+<button on:click={loginWithGoogle}>Login with Google</button>
 
-		<button type="submit">Login</button>
-	</form>
-
-	{#if error}
-		<p class="error">{error}</p>
-	{/if}
-</div>
+{#if error}
+  <p style="color:red">{error}</p>
+{/if}

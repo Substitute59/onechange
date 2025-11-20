@@ -1,66 +1,68 @@
 <script lang="ts">
-  import { auth } from '../../lib/stores/auth';
+  import { auth } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
 
-  let username = '';
   let email = '';
   let password = '';
+  let confirmPassword = '';
+  let username = '';
   let error = '';
   let success = '';
 
   async function register() {
-    const result = await auth.register(username, email, password);
+    error = '';
+    success = '';
 
-    if (result.success) {
-      success = result.message;
-      setTimeout(() => goto('/login'), 1000);
-    } else {
-      error = result.message;
+    if (password !== confirmPassword) {
+      error = 'Passwords do not match';
+      return;
     }
+
+    const { data, error: signUpError } = await auth.signUp(email, password);
+
+    if (signUpError) {
+      error = signUpError.message;
+      return;
+    }
+
+	success = 'Registration successful! Please check your email to confirm your account.';
+      setTimeout(() => goto('/login'), 2000);
+
+    // Ici tu peux créer un profil utilisateur dans ta table "users"
+    /*try {
+      const res = await fetch('/api/create-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: data.user?.id,
+          username
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to create profile');
+
+      success = 'Registration successful! Please check your email to confirm your account.';
+      setTimeout(() => goto('/login'), 2000);
+    } catch (err) {
+      error = (err as Error).message;
+    }*/
   }
 </script>
 
-<div>
-	<h2>Register</h2>
-	<form on:submit|preventDefault={register}>
-		<div>
-			<label for="username">Username:</label>
-			<input
-				bind:value={username}
-				id="username"
-				type="username"
-				required
-			/>
-		</div>
+<h1>Register</h1>
 
-		<div>
-			<label for="email">Email:</label>
-			<input
-				bind:value={email}
-				id="email"
-				type="email"
-				required
-			/>
-		</div>
+<form on:submit|preventDefault={register}>
+  <input type="text" placeholder="Username" bind:value={username} required />
+  <input type="email" placeholder="Email" bind:value={email} required />
+  <input type="password" placeholder="Password" bind:value={password} required />
+  <input type="password" placeholder="Confirm Password" bind:value={confirmPassword} required />
+  <button type="submit">Register</button>
+</form>
 
-		<div>
-			<label for="password">Password:</label>
-			<input
-				bind:value={password}
-				id="password"
-				type="password"
-				required
-			/>
-		</div>
+{#if error}
+  <p style="color:red">{error}</p>
+{/if}
 
-		<button type="submit">Register</button>
-	</form>
-
-	{#if error}
-		<p>{error}</p>
-	{/if}
-
-	{#if success}
-		<p>{success}</p>
-	{/if}
-</div>
+{#if success}
+  <p style="color:green">{success}</p>
+{/if}
