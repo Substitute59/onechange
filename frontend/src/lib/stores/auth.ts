@@ -144,6 +144,8 @@ function createAuthStore() {
 
     subscribeToAuthChanges() {
       if (typeof window !== 'undefined' && window.location.pathname === '/reset-password') {
+        set({ user: null, isAuthenticated: false, loading: false });
+        saveState({ user: null, isAuthenticated: false, loading: false });
         return;
       }
 
