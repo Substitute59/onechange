@@ -15,6 +15,9 @@
   });
 
   onMount(async () => {
+    if (window.location.pathname === '/reset-password') {
+      return;
+    }
     await auth.fetchUser();
     auth.subscribeToAuthChanges();
   });
