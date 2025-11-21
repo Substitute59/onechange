@@ -1,6 +1,6 @@
 import type { PageLoad } from './$types';
-import { loadProfile } from '$lib/profile';
+import { loadUser } from '$lib/services/users';
 
-export const load: PageLoad = async ({ fetch }) => {
-	return loadProfile(fetch);
+export const load: PageLoad = async () => {
+	return loadUser();
 };

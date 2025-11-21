@@ -4,12 +4,16 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 
-	let email = '';
-	let password = '';
-	let confirmPassword = '';
-	let username = '';
-	let error = '';
-	let success = '';
+	let email: string = '';
+	let password: string = '';
+	let confirmPassword: string = '';
+	let username: string = '';
+	let avatarFile: File | null = null;
+	let bio: string = '';
+	let age:number | undefined = undefined;
+	let city: string = '';
+	let error: string = '';
+	let success: string = '';
 
 	async function register() {
 		error = '';
@@ -34,7 +38,24 @@
 				throw new Error('User ID missing after registration.');
 			}
 
-			await createUser(userId, username);
+			const formData = new FormData();
+			formData.append("id", userId);
+			formData.append("username", username);
+			formData.append("bio", bio ?? "");
+			formData.append("age", age?.toString() ?? "");
+			formData.append("city", city ?? "");
+
+			if (avatarFile) {
+				formData.append("avatar", avatarFile);
+			}
+
+			const resp = await createUser(formData);
+
+			if (resp.error) {
+				error = resp.error || 'Erreur lors de la création';
+				return;
+			}
+
 			success = 'Registration successful! Please check your email to confirm your account.';
 			setTimeout(() => goto(resolve('/login')), 2000);
 		} catch (err) {
@@ -46,11 +67,47 @@
 <h1>Register</h1>
 <span>Already have an account?</span> <a href={resolve('/login')}>Log in</a>.
 
-<form on:submit|preventDefault={register}>
-	<input type="text" placeholder="Username" bind:value={username} required />
-	<input type="email" placeholder="Email" bind:value={email} required />
-	<input type="password" placeholder="Password" bind:value={password} required />
-	<input type="password" placeholder="Confirm Password" bind:value={confirmPassword} required />
+<form on:submit|preventDefault={register} enctype="multipart/form-data">
+	<label>
+		Username:
+		<input type="text" bind:value={username} required />
+	</label>
+	<label>
+		Avatar:
+		<input 
+			type="file"
+			on:change={(e: Event) => {
+				const input = e.target as HTMLInputElement;
+				avatarFile = input?.files?.[0] ?? null;
+			}}
+			name="avatarFile"
+			accept="image/*"
+		/>
+	</label>
+	<label>
+		Bio:
+		<textarea bind:value={bio}></textarea>
+	</label>
+	<label>
+		Age:
+		<input type="number" bind:value={age} />
+	</label>
+	<label>
+		City:
+		<input type="text" bind:value={city} />
+	</label>
+	<label>
+		Email:
+		<input type="email" placeholder="Email" bind:value={email} required />
+	</label>
+	<label>
+		Password:
+		<input type="password" placeholder="Password" bind:value={password} required />
+	</label>
+	<label>
+		Confirm Password:
+		<input type="password" placeholder="Confirm Password" bind:value={confirmPassword} required />
+	</label>
 	<button type="submit">Register</button>
 </form>
 

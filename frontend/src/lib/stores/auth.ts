@@ -10,6 +10,7 @@ export interface User {
 	bio?: string;
 	city?: string;
 	age?: number;
+	avatarFile?: FileList;
 }
 
 interface AuthState {
