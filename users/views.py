@@ -2,10 +2,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from core.supabase import supabase
-import logging
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
-logger = logging.getLogger(__name__)
+from core.supabase_graphql import gql
 
 
 def handle_avatar_upload(user_id: str, avatar_file, old_url: str = "") -> str:
@@ -78,36 +75,99 @@ def create_user(request):
         user_data = build_user_data(request.POST, request.FILES)
         user_data["id"] = supabase_id
 
-        result = supabase.table("users").insert(user_data).execute()
-        if not result.data:
-            return JsonResponse({"error": "Impossible de créer l'utilisateur"}, status=400)
+        query = """
+        mutation InsertUser($objects: [usersInsertInput!]!) {
+            insertIntousersCollection(objects: $objects) {
+                records {
+                    id
+                    username
+                    avatar_url
+                    bio
+                    age
+                    city
+                }
+            }
+        }
+        """
 
-        return JsonResponse({"user": result.data[0]}, status=201)
+        result = gql(query, {"objects": [user_data]})
+
+        records = result.get("insertIntousersCollection", {}).get("records", [])
+        
+        if not records:
+            return JsonResponse({"error": "Échec de création"}, status=500)
+
+        return JsonResponse({"user": records[0]}, status=201)
     except Exception as e:
-        logger.exception("create_user error")
         return JsonResponse({"error": str(e)}, status=500)
 
 
 @require_http_methods(["GET"])
 def get_user(request, user_id):
     try:
-        result = supabase.table("users").select("*").eq("id", user_id).execute()
-        if not result.data:
+        query = """
+        query GetUser($id: UUID!) {
+            usersCollection(filter: { id: { eq: $id } }) {
+                edges {
+                    node {
+                        id
+                        username
+                        avatar_url
+                        bio
+                        age
+                        city
+                    }
+                }
+            }
+        }
+        """
+
+        result = gql(query, {"id": user_id})
+
+        edges = result.get("usersCollection", {}).get("edges", [])
+
+        if not edges:
             return JsonResponse({"error": "Utilisateur non trouvé"}, status=404)
-        return JsonResponse({"user": result.data[0]}, status=200)
+
+        user = edges[0]["node"]
+
+        return JsonResponse({"user": user}, status=200)
     except Exception as e:
-        logger.exception("get_user error")
         return JsonResponse({"error": str(e)}, status=500)
 
 
 @require_http_methods(["POST"])
 def update_user(request, user_id):
     try:
-        user_data = build_user_data(request.POST, request.FILES, existing_avatar_url=request.POST.get("avatar_url", ""), userId=user_id)
-        result = supabase.table("users").update(user_data).eq("id", user_id).execute()
-        if not result.data:
-            return JsonResponse({"error": "Impossible de modifier l'utilisateur"}, status=400)
-        return JsonResponse({"user": result.data[0]}, status=200)
+        user_data = build_user_data(
+            request.POST, 
+            request.FILES, 
+            existing_avatar_url=request.POST.get("avatar_url", ""), 
+            userId=user_id
+        )
+
+        query = """
+        mutation UpdateUser($id: UUID!, $set: usersUpdateInput!) {
+            updateusersCollection(filter: { id: { eq: $id } }, set: $set) {
+                records {
+                    id
+                    username
+                    avatar_url
+                    bio
+                    age
+                    city
+                }
+            }
+        }
+        """
+
+        result = gql(query, {"id": user_id, "set": user_data})
+
+        records = result.get("updateusersCollection", {}).get("records", [])
+        
+        if not records:
+            return JsonResponse({"error": "Utilisateur non trouvé ou mise à jour échouée"}, status=404)
+
+        return JsonResponse({"user": records[0]}, status=200)
     except Exception as e:
-        logger.exception("update_user error")
         return JsonResponse({"error": str(e)}, status=500)

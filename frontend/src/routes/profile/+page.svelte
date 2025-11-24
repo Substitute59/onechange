@@ -8,7 +8,13 @@
 
 {#if user}
 	<p>Username: {user.username}</p>
-	<p>Avatar: <img src={user.avatar_url} alt="Avatar" width="50" /></p>
+	<p>Avatar: 
+		{#if user.avatar_url}
+			<img src={user.avatar_url} alt="Avatar" width="50" />
+		{:else}
+			aucun
+		{/if}
+	</p>
 	<p>Bio: {user.bio}</p>
 	<p>Age: {user.age}</p>
 	<p>City: {user.city}</p>

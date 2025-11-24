@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '../app.css';
 	import { onMount, onDestroy } from 'svelte';
 	import { auth } from '$lib/stores/auth';
 	import type { User } from '$lib/stores/auth';
@@ -46,7 +47,7 @@
 		</nav>
 	</header>
 
-	<main>
+	<main class="bg-zinc-900">
 		<slot />
 	</main>
 {/if}
