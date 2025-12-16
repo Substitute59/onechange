@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
     import { supabase } from '$lib/supabase';
     import { createUser, loadUser } from '$lib/services/users';
+    import { Spinner } from "$lib/components/ui/spinner/index.js";
 
     let accessToken: string;
 
@@ -49,3 +50,8 @@
         }
     });
 </script>
+
+<main class="bg-zinc-900 text-xl text-white h-screen w-screen flex items-center justify-center">
+    <Spinner class="size-6" />
+    <span class="ml-4">Loading...</span>
+</main>

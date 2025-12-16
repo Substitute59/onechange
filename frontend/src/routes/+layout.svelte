@@ -1,10 +1,9 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount, onDestroy } from 'svelte';
-	import { auth } from '$lib/stores/auth';
-	import type { User } from '$lib/stores/auth';
-	import { resolve } from '$app/paths';
-	import { goto } from '$app/navigation';
+	import { auth, type User } from '$lib/stores/auth';
+	import Header from '$lib/components/header/Header.svelte';
+	import { Spinner } from "$lib/components/ui/spinner/index.js";
 
 	let user: User | null = null;
 	let isAuthenticated = false;
@@ -25,28 +24,19 @@
 	});
 
 	onDestroy(() => unsubscribe());
-
-	async function logout() {
-		await auth.signOut();
-		goto(resolve('/login'));
-	}
 </script>
 
 {#if loading}
-	<span>Loading...</span>
+	<main class="bg-zinc-900 text-xl text-white h-screen w-screen flex items-center justify-center">
+		<Spinner class="size-6" />
+		<span class="ml-4">Loading...</span>
+	</main>
 {:else}
-	<header>
-		<nav>
-			{#if isAuthenticated}
-				<span>Hi, {user?.username || user?.email}!</span>
-				<a href={resolve('/profile')}>Mon profil</a>
-				<button on:click={logout}>Logout</button>
-			{:else}
-				<a href={resolve('/login')}>Login</a>
-			{/if}
-		</nav>
-	</header>
-
+	<Header
+		user={$auth.user}
+		isAuthenticated={$auth.isAuthenticated}
+		loading={$auth.loading}
+	/>
 	<main class="bg-zinc-900">
 		<slot />
 	</main>

@@ -20,7 +20,7 @@ interface AuthState {
 }
 
 const storedState: AuthState =
-	typeof localStorage !== 'undefined' && localStorage.getItem('authState')
+	typeof window !== 'undefined' && localStorage.getItem('authState')
 		? JSON.parse(localStorage.getItem('authState')!)
 		: { user: null, isAuthenticated: false, loading: true };
 
@@ -40,7 +40,7 @@ function createAuthStore() {
 	const { subscribe, update, set } = writable<AuthState>(storedState);
 
 	function saveState(state: AuthState) {
-		if (typeof localStorage !== 'undefined') {
+		if (typeof window !== 'undefined') {
 			localStorage.setItem('authState', JSON.stringify(state));
 		}
 	}

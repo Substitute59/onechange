@@ -13,13 +13,16 @@
 				outline:
 					"bg-background shadow-xs hover:bg-background/90 dark:bg-input/30 dark:border-input dark:hover:bg-input/50 border",
 				secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-				ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+				ghost: "hover:text-white dark:hover:bg-accent/50",
 				link: "text-primary underline-offset-4 hover:underline",
+				rounded: "w-10 h-10 rounded-full flex items-center justify-center hover:ring-2 ring-purple-500",
+				navigation: "flex items-center justify-start px-4 py-3 text-md rounded-lg hover:bg-zinc-800 text-zinc-300 hover:text-white",
 			},
 			size: {
 				default: "h-9 px-4 py-2 has-[>svg]:px-3",
 				sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
 				lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+				navigation: "w-full h-auto",
 				icon: "size-9",
 				"icon-sm": "size-8",
 				"icon-lg": "size-10",
